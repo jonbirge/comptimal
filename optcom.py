@@ -3,12 +3,13 @@ import subprocess
 # Define compilation flags
 exclusive_flags = ['-O0', '-O1', '-O2', '-O3', '-Os', '-Ofast']
 independent_flags = [
-    '-ffast-math', '-funroll-loops', '-fomit-frame-pointer',
-    '-mtune=native', '-fpic', '-fPIC', '-faggressive-loop-optimizations',
-    '-falign-loops', '-falign-jumps', '-fdata-sections', '-ffunction-sections',
-    '-finline-functions', '-ftree-loop-optimize', '-ftree-loop-vectorize',
-    '-ftree-pre', '-ftree-vectorize', '-funsafe-math-optimizations',
-    '-fwhole-program'
+    '-mtune=native', '-fpic', '-fPIC',
+    '-march=native', '-fdata-sections', '-ffunction-sections',
+    '-finline-functions', '-ftree-loop-optimize',
+    '-ftree-partial-pre', '-funsafe-math-optimizations',
+    '-fgcse-sm', '-fgcse-las', '-fgcse-las=all', '-fsched-spec-load',
+    '-fsched-pressure', '-fipa-pta', '--with-isl -floop-nest-optimize',
+    '-ftree-loop-im', '-fivopts', '-ftree-parallelize-loops=4'
 ]
 
 def run_command(command, env):
