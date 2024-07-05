@@ -8,13 +8,12 @@ exclusive_flags = ['-O0', '-O1', '-O2', '-O3', '-Os', '-Ofast']
 independent_flags = [
     '-mtune=native', '-fpic', '-fPIC', '-Os',
     '-march=native', '-fdata-sections', '-ffunction-sections',
-    #    '-funroll-loops', '-ftree-loop-optimize', '-floop-parallelize-all',
-    #    '-ftree-partial-pre', '-funsafe-math-optimizations',
+    '-funroll-loops', '-ftree-loop-optimize', '-floop-parallelize-all',
+    '-ftree-partial-pre', '-funsafe-math-optimizations',
     '-fgcse-sm', '-fgcse-las=all', '-fsched-spec-load', '-fsplit-loops',
     '-fsched-pressure', '-fipa-pta', '-floop-nest-optimize', '-fsection-anchors',
     '-ftree-loop-im', '-fivopts', '-ftree-parallelize-loops=4',
-    '-ffinite-math-only', '-fno-signed-zeros', '-fno-signaling-nans -fno-trapping-math',
-    
+    '-ffinite-math-only', '-fno-signed-zeros', '-fno-signaling-nans -fno-trapping-math'
 ]
 
 # Number of processors to use
