@@ -1,25 +1,30 @@
 #!/usr/bin/env python3
 
+import os
 import subprocess
 
 # Define compilation flags
 exclusive_flags = ['-O0', '-O1', '-O2', '-O3', '-Os', '-Ofast']
 independent_flags = [
-    '-mtune=native', '-fpic', '-fPIC',
+    '-mtune=native', '-fpic', '-fPIC', '-Os',
     '-march=native', '-fdata-sections', '-ffunction-sections',
-    '-finline-functions', '-ftree-loop-optimize',
-    '-ftree-partial-pre', '-funsafe-math-optimizations',
-    '-fgcse-sm', '-fgcse-las=all', '-fsched-spec-load',
-    '-fsched-pressure', '-fipa-pta', '--with-isl -floop-nest-optimize',
-    '-ftree-loop-im', '-fivopts', '-ftree-parallelize-loops=4'
+    #    '-funroll-loops', '-ftree-loop-optimize', '-floop-parallelize-all',
+    #    '-ftree-partial-pre', '-funsafe-math-optimizations',
+    '-fgcse-sm', '-fgcse-las=all', '-fsched-spec-load', '-fsplit-loops',
+    '-fsched-pressure', '-fipa-pta', '-floop-nest-optimize', '-fsection-anchors',
+    '-ftree-loop-im', '-fivopts', '-ftree-parallelize-loops=4',
+    '-ffinite-math-only', '-fno-signed-zeros', '-fno-signaling-nans -fno-trapping-math',
+    
 ]
+
+# Number of processors to use
+nproc = str(os.cpu_count())
+
 
 def run_command(command, env):
     # Improved command execution with subprocess.run
     result = subprocess.run(
         ["/usr/bin/time", "-f", "%U", "bash", "-c", command],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
         text=True,
         env=env,
         capture_output=True
@@ -32,18 +37,20 @@ def run_command(command, env):
 
     return user_time
 
+
 def compile_and_test(flags):
     # Set the environment variables for compilation flags
     env = {'CFLAGS': ' '.join(flags), 'CXXFLAGS': ' '.join(flags)}
 
     try:
         # Run the configure script
-        subprocess.run(['./configure'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, check=True)
+        subprocess.run(['./configure'],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, check=True)
 
         # Run make clean and parallel make
         subprocess.run(['make', 'clean'],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-        subprocess.run(['make', '-j $(nproc)'],
+        subprocess.run(['make', '-j', nproc],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
         
         # Run 'make check' four times and average the last three runs
@@ -56,6 +63,7 @@ def compile_and_test(flags):
 
     return avg_time
 
+
 def final_build(flags):
     env = {'CFLAGS': ' '.join(flags), 'CXXFLAGS': ' '.join(flags)}
     
@@ -64,12 +72,11 @@ def final_build(flags):
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, check=True)
     subprocess.run(['make', 'clean'],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-    subprocess.run(['make', '-j',
-                    str(subprocess.check_output(['nproc'], stderr=subprocess.DEVNULL).strip().decode())],
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    subprocess.run(['make', '-j', nproc], check=True)
     
     print("Final build complete with optimal flags. You can now run 'make install' to install the optimized binary.")
 
+    
 def main():
     best_time = float('inf')
     best_flags = []
@@ -82,7 +89,7 @@ def main():
         if exec_time < best_time:
             best_time = exec_time
             best_flags = [flag]
-            print(f"Best exclusive flag so far: {best_flags} with time: {best_time}s")
+            print(f"*** Best exclusive flag so far: {best_flags} with time: {best_time}s")
 
     for flag in independent_flags:
         current_flags = best_flags + [flag]
@@ -99,4 +106,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
