@@ -9,7 +9,7 @@ independent_flags = [
     '-march=native', '-fdata-sections', '-ffunction-sections',
     '-finline-functions', '-ftree-loop-optimize',
     '-ftree-partial-pre', '-funsafe-math-optimizations',
-    '-fgcse-sm', '-fgcse-las', '-fgcse-las=all', '-fsched-spec-load',
+    '-fgcse-sm', '-fgcse-las=all', '-fsched-spec-load',
     '-fsched-pressure', '-fipa-pta', '--with-isl -floop-nest-optimize',
     '-ftree-loop-im', '-fivopts', '-ftree-parallelize-loops=4'
 ]
