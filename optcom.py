@@ -15,38 +15,44 @@ independent_flags = [
 ]
 
 def run_command(command, env):
-    # Using the 'time' command to measure user time
-    process = subprocess.Popen(
-        f"/usr/bin/time -f '%U' {command}",
-        shell=True,
+    # Improved command execution with subprocess.run
+    result = subprocess.run(
+        ["/usr/bin/time", "-f", "%U", "bash", "-c", command],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
-        env=env
+        text=True,
+        env=env,
+        capture_output=True
     )
-    _, stderr = process.communicate()
 
-    # Extracting user time from the output
     try:
-        user_time = float(stderr.strip().decode())
+        user_time = float(result.stderr.strip())
     except ValueError:
         user_time = float('inf')
-    
+
     return user_time
 
 def compile_and_test(flags):
     # Set the environment variables for compilation flags
     env = {'CFLAGS': ' '.join(flags), 'CXXFLAGS': ' '.join(flags)}
-    
-    # Run the configure script
-    subprocess.run(['./configure'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, check=True)
-    
-    # Run make clean and parallel make
-    subprocess.run(['make', 'clean'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-    subprocess.run(['make', '-j', str(subprocess.check_output(['nproc'], stderr=subprocess.DEVNULL).strip().decode())], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
- 
-    # Run 'make check' four times and average the last three runs
-    times = [run_command('make check', env) for _ in range(4)]
-    avg_time = sum(times[1:]) / 3  # Average of the last three runs
+
+    try:
+        # Run the configure script
+        subprocess.run(['./configure'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, check=True)
+
+        # Run make clean and parallel make
+        subprocess.run(['make', 'clean'],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        subprocess.run(['make', '-j $(nproc)'],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        
+        # Run 'make check' four times and average the last three runs
+        times = [run_command('make check', env) for _ in range(4)]
+        avg_time = sum(times[1:]) / 3  # Average of the last three runs
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while executing: {e.cmd}")
+        print(f"Error message: {e.stderr if e.stderr else 'No stderr output available.'}")
+        avg_time = float('inf')
 
     return avg_time
 
@@ -54,9 +60,13 @@ def final_build(flags):
     env = {'CFLAGS': ' '.join(flags), 'CXXFLAGS': ' '.join(flags)}
     
     # Run the configure and final parallel make build
-    subprocess.run(['./configure'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, check=True)
-    subprocess.run(['make', 'clean'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-    subprocess.run(['make', '-j', str(subprocess.check_output(['nproc'], stderr=subprocess.DEVNULL).strip().decode())], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    subprocess.run(['./configure'],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, check=True)
+    subprocess.run(['make', 'clean'],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    subprocess.run(['make', '-j',
+                    str(subprocess.check_output(['nproc'], stderr=subprocess.DEVNULL).strip().decode())],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
     
     print("Final build complete with optimal flags. You can now run 'make install' to install the optimized binary.")
 
@@ -83,7 +93,7 @@ def main():
         if exec_time < best_time:
             best_time = exec_time
             best_flags.append(flag)
-            print(f"New optimal flags found: {best_flags} with execution time: {best_time}s")
+            print(f"*** New optimal flags found: {best_flags} with execution time: {best_time}s")
 
     final_build(best_flags)
 
